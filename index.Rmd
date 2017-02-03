@@ -1,15 +1,21 @@
 ---
 title: "IODS course project"
-author: "Karoliina Suonpää"
+author: "Karoliina Suonpaa"
 output:
   html_document:
-    theme: cosmo
-    toc: true
-    toc_depth: 2
-    fig_caption: true
-    fig_width: 6
-    fig_height: 4
     code_folding: hide
+    fig_caption: yes
+    fig_height: 4
+    fig_width: 6
+    theme: cosmo
+    toc: yes
+    toc_depth: 2
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+  word_document:
+    toc: yes
+    toc_depth: '2'
 ---
 
 ***
@@ -23,3 +29,110 @@ output:
 ```
 
 ***
+#This is the part "Analysis"
+
+#The dataset is a student survey collected by Kimmo Vehkalahti. In the data wrangling exercise, 
+#I chose the variables relevant for this assignment: here we have 7 variables and 166 observations. 
+#The structure of the dataset is seen below. There are more women than men among the respondents, the median age
+#is 22. Variable "Attitude" measures the students' attitudes towards statistics. Variables "deep", "stra", and "surf"
+#measure the different approaches to learning: The variable "deep" consists of 12 different items measuring 
+#the deep approach towards learning, which refers the intention to maximize understanding and a true commitment 
+#to learning. The variable "stra" refers to Strategic approach and it consists of 8 different items. It measures the 
+#way students organize their studing. Lastly, variable "surf" refers to Surface approach and consists of 12 different 
+#items measuring memorizing without understanding, with a serious lack of personal engagement in the learning proces. 
+#The variable "Points" measures the students' success at the exam. Students who received 0 points were omitted from 
+#the study.
+
+#check the data
+str(new_data)
+summary(new_data)
+
+# install and access the GGally and ggplot2 libraries
+install.packages("GGally")
+install.packages("ggplot2")
+library(ggplot2)
+library(GGally)
+
+#get a graphical overview of the data
+p_new_data <- ggpairs(new_data, mapping = aes(col = gender, alpha=0.3), lower = list(combo = wrap("facethist", 
+                                                                                                  bins = 20)))
+#print the picture
+p_new_data
+
+#This plot is a neat way of examining the data: we see the correlations and distributions for both genders.
+#From the upper row we see that the male students are in average a bit older than the female students,
+#and they also seem to have a more positive attitude towards statistics. The gender differences between the
+#the different learning approaches (deep and surface learning) seem really small. Female students seem to be a bit 
+#more strategic learnings. Male students seem to get slightly better points from the test. All in all, he distributions 
+#seem pretty similar for both of the genders. Most of these bivariate correlations seem to be pretty small, but the 
+#strongest correlation we see between the attitude and poins (0.44), and the surface and deep learning (-0.33), 
+#and strategic and surface learning (-0.24). I do not know the theory behind the survey but it seems reasonable, 
+#that deep and surface learning have negative correlation.
+
+#fit to the linear model
+lin_reg <- lm(Points ~ Attitude + stra + surf, data = new_data)
+summary(lin_reg)
+
+#Here we see the linear model where the success at the exam is the dependent variable ("Points"), and the attitude 
+#towards statistics ("Attitude"), the strategic studying ("stra"), and the surface studying ("surf") are indenpendent
+#variables. Attitude has positive and statistically significant correlation with the points from the exam: the better
+#the attitude, the better the success at the exam. When attitude increases by one unit, the average change in points 
+#is 0.34 units, given that the other variables (here "stra" and "surf") do not change. In this model, stratetic and 
+#surface studying are not statistically significantly  associated with the dependent variable, at least when the. 
+#The model explains roughly twenty percent of the variance of this phenomenon.
+
+#Next I excluded the variable which had the highest p-value and the smallest estimate, the surface learning.
+
+#fit to the linear model
+lin_reg2 <- lm(Points ~ Attitude + stra, data = new_data)
+summary(lin_reg2)
+
+#Here, we have only two independent variables: attitude towards statistics and stratetic learning. The estimates of 
+#the independent variable are slightly bigger than in previous model, and the degrees of freedom increased by one.
+#The attitude has again statistically significant correlation with the points, stategic learning has not. Hende, I 
+#exclude also the stategic learning from the model.
+
+lin_reg3 <- lm(Points ~ Attitude, data = new_data)
+summary(lin_reg3)
+
+#In my final model there is only one explanatory factor: the attitude. When the attitude towards statistics increases 
+#by one unit, the average change in the points is 0.35 units. Multiple R-squared tells how much of the variance in 
+#the dependent variable can be explained by the independent variables. This model explains 19 % of the variation in the
+#dependent variable (the points from the exam). Every time we add an independent variable to the model, the R-squared 
+#value will increase. Yet, we do not know if the increase in R-squared value is caused by the actual predictive power
+#of the new variable, or just by chance alone.Adjusted R-squared provides the same information as R-squared but adjusts 
+#for the number of terms in the model. It decreases when the new variable does not have any real impact on the 
+#predicted value. (In this assingment, they are almost the same because we do not have many variables.) 
+
+#Linear model have several assumptions, and how well the model describes the phenomenon we are studying,
+#depends on how well these assumptions fit the reality. It is assumed that (1) the relationship between
+#the independent and dependent variable is linear, (2) that the errors are normally distributed, 
+#(3) not correlated, and (4) have a constant variance. Prediction errors are called residuals and 
+#the model is found by minimizing the sum of residuals. Hence, analyzing the residuals of the model
+#is a good method for analyzing the validity of the assumptions.
+
+#QQ-plot is a method for studying the normality assumption. The better the points fit into the line,
+#the better the fit with the normality assumption. In this picture we see that the majority of the observations
+#fit to the normality assumption, only a few extreme values have weaker fit. Yet, the perfect fit can only be 
+#found with the synthetic data and I think our dataset passes this test.
+
+plot(lin_reg3, which=c(2))
+
+#The constant variance assumption implies that the size of the errors should not depend on the explanatory variables.
+#This is explored with a scatter plot of residuals versus model predictions. In the picture, residuals seem to be
+#quite evenly distributed, we do not see any patterns in the picture but the spread of the dots seems reasonable random.
+
+plot(lin_reg3, which=c(1))
+
+#Leverage measures the impact of a single observation to the model.Residuals vs leverage plot can help identify which 
+#observations have an usually  high impact. There does not seem to be a problem with the leverage: no single outliers
+#are having too much leverage to the model.
+
+plot(lin_reg3, which=c(5))
+
+#Based on these diagnostic pictures, the linear model seems to fit the dataset.
+
+install.packages("rmarkdown")
+library(rmarkdown)
+
+
