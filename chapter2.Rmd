@@ -32,8 +32,8 @@ When you click the **Knit** button a document will be generated that includes bo
 
   #install and access the GGally and ggplot2 libraries
 ```{r}
-    install.packages("GGally")
-    install.packages("ggplot2")
+    install.packages("GGally", repos="http://cran.rstudio.com/")
+    install.packages("ggplot2", repos="http://cran.rstudio.com/")
     library(ggplot2)
     library(GGally)
 ```
