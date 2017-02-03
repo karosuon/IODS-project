@@ -12,7 +12,8 @@ When you click the **Knit** button a document will be generated that includes bo
   #The dataset is a student survey collected by Kimmo Vehkalahti. In the data wrangling exercise, 
   #I chose the variables relevant for this assignment: here we have 7 variables and 166 observations. 
   #The structure of the dataset is seen below. There are more women than men among the respondents, the median age
-  #is 22. Variable "Attitude" measures the students' attitudes towards statistics. Variables "deep", "stra", and "surf"
+  #is 22. Variable "Attitude" measures the students' attitudes towards statistics. Variables "deep", "stra", and 
+  "surf"
   #measure the different approaches to learning: The variable "deep" consists of 12 different items measuring 
   #the deep approach towards learning, which refers the intention to maximize understanding and a true commitment 
   #to learning. The variable "stra" refers to Strategic approach and it consists of 8 different items. It measures the 
