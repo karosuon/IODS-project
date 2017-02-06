@@ -17,7 +17,7 @@ output: html_document
   #the study.
   
 ```{r} 
-  setwd("F:/IODS")
+  setwd("Z:/Jatko-opinnot/Tilastotiede 2016/IODS/IODS-project")
   new_data <- read.csv("learning2014.csv", sep=",", header=T)
 ```
 
