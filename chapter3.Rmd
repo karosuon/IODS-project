@@ -1,0 +1,248 @@
+---
+title: "chapter3.Rmd"
+author: "Rstudio"
+date: "7 helmikuuta 2017"
+output: html_document
+---
+
+#RStudio Exercise 3
+
+```{r}
+  setwd("Z:/Jatko-opinnot/Tilastotiede 2016/IODS/IODS-project")
+  uci <- read.csv("http://s3.amazonaws.com/assets.datacamp.com/production/course_2218/datasets/alc.txt ", sep=",", header=T)
+```
+
+This dataset is retrieved from the UCI Machine Learning Repository which is a source for open data. The data contain two identical questionnaires related to secondary school student alcohol comsumption in Portugal. For this exercise, two surveys were combined to one dataset. This final dataset contains 382 observations and 35 variables describing the participants and their families. More information about the data can be found here: https://archive.ics.uci.edu/ml/datasets/STUDENT+ALCOHOL+CONSUMPTION. 
+
+
+```{r}
+#check the data
+dim(uci)
+names(uci)
+```
+
+My hypothesis is that sex, the quality of family relationships, the amount of staying out with friends, and a will to go to higher education are associated to alcohol consumption in the following ways:
+
+Hypothesis 1: Boys tend drink more alcohol than girls.
+Hypothesis 2: Students who have bad relationship with their family, tend to drink more alcohol.
+Hypothesis 3: Student who go out with friends a lot, tend to drink more alcohol.
+Hypothesis 4: Students who want to continue to higher education, tend to drink less alcohol.
+
+From the picture below we notice that most of the participants describe their alcohol consumtion as very low. 
+
+```{r}
+#barplots describing the use of alcohol
+counts <- table(uci$alc_use)
+barplot(counts, main="Use of alcohol", xlab="1=very low use of alcohol, 5=very high use of alcohol")
+```
+
+In some analysis I will use the dummy variable where students are divided between those who use a lot of alcohol (higher than 2 in a scale from 1 to 5) and those who do not. In our dataset, 112 of 382 students drink a lot of alcohol.
+
+```{r}
+summary(uci$high_use)
+```
+
+There are 198 girls and 184 boys in our dataset. My first hypothesis concerned the association of sex and the use of alcohol. From the boxplot below we see that boys tend to drink more than girls. However, there seems to be a lot of distribution among both of the sexes.
+
+```{r}
+summary(uci$sex)
+boxplot(alc_use~sex, data=uci, main="Association of sex and use of alcohol", xlab="Sex", ylab="Use of alcohol")
+```
+
+I wanted to examine the association with the cross-tabulation also. In the cross-table below I used the dummy variable describing the high use of alcohol. We see again that high use of alcohol is more common among boys.
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+#install and use the package 
+install.packages("gmodels", repos="http://cran.rstudio.com/")
+library(gmodels)
+```
+
+```{r}
+CrossTable(uci$high_use, uci$sex)
+```
+
+I also tested the correlation between sex and the use of alcohol. It is statistically significant (p<0.001) but not very strong.
+
+```{r}
+#transform categorical variable to numeric
+uci$sex_num<-as.numeric(uci$sex)
+#get correlation
+cor.test (uci$alc_use, uci$sex_num, alternative = c ("two.sided"))
+```
+
+My second hypothesis concerned the association of the quality of family relationship and the use of alcohol.I assume that bad relationship with family is associated with the higher use of alcohol. Most of the participants seem to have a good relationship with their family.
+
+```{r}
+counts2 <- table(uci$famrel)
+barplot(counts2, main="The quality of family relationship", xlab="1=very bad, 5=excellent") 
+```
+
+In the boxplot below we see the association of the use of alcohol and the quality of family relationship.The quality of family relationship was coded the way that bigger the value, the better the relationship (1=very low,
+5=excellent). The relationship does not seem clear: there are some outliers and it seems that both the groups that have either very bad (1) or excellent (5) relationship with their families drink less than some groups in the middle.
+
+```{r}
+boxplot(alc_use~famrel, data=uci, main="Association of quality of family relationship and the use of alcohol", xlab="The quality of family relationship", ylab="Use of alcohol") 
+```
+
+I tested the correlation between the quality of family relationship and use of alcohol. It is statistically significant (p<0.05) but very small. The direction is what I assumed: weak relationship with family is associated
+with increased alcohol consumption.
+
+```{r}
+cor.test (uci$alc_use, uci$famrel, alternative = c ("two.sided"))
+```
+
+My third hypothesis was that going out with friends is positively associated with the use of alcohol. Going out was coded so that greater the value, the more often the participant goes out with friends.
+Only a small proportion of the participants were going out very rarely.
+
+```{r}
+counts3 <- table(uci$goout)
+barplot(counts3, main="Going out with friends", xlab=" 1=very low, 5=very high") 
+```
+
+In the boxplot below we see that going out with friends is associated with the use of alcohol: those who go out the most, also drink the most.
+
+```{r}
+boxplot(alc_use~goout, data=uci, main="Association of going out with friends and the use of alcohol", xlab="Going out with friends", ylab="Use of alcohol")
+```
+
+I wanted to examine this association with the cross-tabulations also. In the cross-table below, I used again the dummy variable describing the high use of alcohol. We see that in the groups of the students who go out the most (5), 59 % of the students drink a lot of alcohol, compared 19 % of those students go out an average amount (3), or 13 % of students who go out the least (1).
+
+```{r}
+CrossTable(uci$high_use, uci$goout)
+```
+
+I tested also the correlation between going out with friends and drinking alcohol. Just like I assumed, there is adequate and statistically significant (p<0.001) correlation between the amount of going out with friends
+and the use of alcohol.
+
+```{r}
+cor.test (uci$alc_use, uci$goout, alternative = c ("two.sided"))
+```
+
+My last hypothesis was that students who want to continue to higher education tend to drink less alcohol. Overwhelming majority of the participants want to continue to higher education.
+```{r}
+summary(uci$higher)
+```
+
+In the boxplot we see that the average use of alcohol seem to be higher among the students who do not want to continue to higher education. 
+
+```{r}
+boxplot(alc_use~higher, data=uci, main="Association of a will to go to higher education and the use of alcohol", xlab="Want to continue to higher education", ylab="Use of alcohol")
+```
+
+I tested the associaton of the will to go to higher education and high use of alcohol also with a crosstable where I again used the dummy variable describing the high use of alcohol.The students 
+who no not want to continue to higher education are distributed evenly to both groups of drinking (high use and not high use), but a clear majority (72 %) of students who want to continue to higher education are not drinking a lot of alcohol.
+
+```{r}
+CrossTable(uci$high_use, uci$higher)
+```
+
+The correlation between the use of alcohol and a will to go to higher education is very small and the p-value gets close the common threshold for statistical significance (p = 0.06). Dataset does not support my fourth hypothesis. However, the number of students who do not want to continue to higher education was very small (only 18 students) so maybe there were not enough variance for studying this association.
+
+```{r}
+uci$higher_num<-as.numeric(uci$higher)
+cor.test (uci$alc_use, uci$higher_num, alternative = c ("two.sided"))
+```
+
+Next I test my previous hypothesis with logistic regression.
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+#install and use the package 
+install.packages("dplyr", repos="http://cran.rstudio.com/")
+library(dplyr)
+```
+
+```{r}
+logreg <- glm(high_use ~ sex + famrel + goout + higher, data = uci, family = "binomial")
+summary(logreg)
+```
+
+Above we see the results of a logistic regression where the high use of alcohol is a dependent variable and sex, the quality of family relationship, the amount of going out with friends and will to continue to higher
+education are independent variables.As stated above, sex is associated with the high use of alcohol: boys tend to drink more alcohol. (Sex is a categorial variable and R orders the levels of the categorial variable alphabetically and takes the first as reference class. Hence, girls are here the reference class.) The quality of family relationship has an inverse association to the high use of alcohol. Going out with friends
+is positively associated with the high use of alcohol. Instead, the will to continue to higher education is not statistically significantly associated with the high use of alcohol. (Here the reference class is those who do not want to continue to higher education.)
+
+```{r, warning=FALSE}
+#odds ratios and the confidence intervalls (95 %)
+OR <- coef(logreg) %>% exp
+CI <- confint(logreg) %>% exp
+#print out the odds ratios with their confidence intervals (95 %) 
+cbind(OR, CI)
+```
+
+Above we see the odds ratios and confidence intervals (95 %). Boys have a higher odds of the high use of alcohol than girs (OR=2.5, CI=1.5-4.2). Yet, confidence intervalls are quite wide. However, this finding clearly supports the first hypothesis. The quality of the family relationship is inversely associated with a high use of alcohol (OR=0.6, CI=0.5-0.8): the better the relationship, the smaller the odds of a high use of alcohol. The association
+is not very strong, though, since the coefficient is quite small. However, this finding supports the second hypothesis. Going out with friends is associated with the high use of alcohol (OR=2.2, CI=1.8-2.9). Hence, also the third hypothesis is clearly supported by the model. A will to continue to higher education seems to be associated with the high use of alcohol in a hypothesized way: the odds for those who want to go to higher education is less than 1 (OR=0.6, CI=0.2-1.9). However, the confidence interval is huge so I conclude that the fourth hypothesis does not get support from the data. It seems that of the variables I studies, going out with friends is the best predictor of the high use of alcohol. It sounds logical: for many young people, drinking alcohol is related to social situations, such as going out with peers.
+
+I test the predictive power of my model by calculating the proportion of correctly classified observations. The proportion of inccorrectly classified observations is the error of my model. I include only the variables wchich had a statistical relationship with high alcohol consumption according to my logistic regression model, hence I exclude the variable describing the will to continue to higher education.
+
+```{r}
+#fit the model again, without the variable "higher"
+logreg2 <- glm(high_use ~ sex + famrel + goout, data = uci, family = "binomial")
+#predict the probability of high use of alcohol
+probabilities <- predict(logreg2, type = "response")
+#add the predicted probabilities to dataset
+uci <- mutate(uci, probability = probabilities)
+#use the probabilities to make a prediction of high use of alcohol
+uci <- mutate(uci, prediction = probability >0.5 )
+```
+
+
+In the cross table below we see the confusion matrix comparing the real and the predicted model. My model seems to underestimate the amount of students who use a lot of alcohol.
+
+```{r}
+table(high_use = uci$high_use, prediction = uci$prediction) %>% prop.table() %>% addmargins()
+```
+
+In the plot below, the probability is on the x axis and the high use of alcohol is on the y axis.
+
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+#use the package
+library(ggplot2)
+```
+
+```{r}
+g1 <- ggplot(uci, aes(x = probability, y = high_use, col=prediction))
+g1 + geom_point()
+```
+
+Next I define a loss function and compute the mean prediction error for my model.
+
+```{r}
+#define a loss function (mean prediction error)
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+```
+
+
+```{r}
+#call loss_func to compute the average number of wrong predictions in the (training) data
+loss_func(class = uci$high_use, prob = uci$probability)
+```
+
+We see that the training error of the model is 0.21. It means that, on average, 21 % of the predictions were wrong. 
+Simple guessing method in a binary situation (e.g. flipping a symmetric coin) would have been right roughly in 50 % of
+the events. My model predicted accurately in 79 % of situations. Hence, my model performed better than just guessing.
+
+As a bonus, I perform 10-fold cross-validation on my model. Cross-validation involves partitioning a sample of data into complementary subsets, performing the analysis on one subset ("the training set"), and validating the analysis on the other subset ("the testing set"). The process is repeated so that eventually all of the data is used for both the training and testing.
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+#install and use the package 
+install.packages("boot", repos="http://cran.rstudio.com/")
+library(boot)
+```
+
+```{r}
+#perform 10-fold cross-validation by using earlier created loss function
+cv <- cv.glm(data = uci, cost = loss_func, glmfit = logreg2, K = 10)
+```
+
+Delta gives two values: The first component is the raw cross-validation estimate of prediction error. The second component is the 
+adjusted cross-validation estimate. The adjustment is designed to compensate for the bias introduced by not using leave-one-out cross-validation.
+
+```{r}
+#Print out the mean prediction error for the testing data.
+cv$delta
+```
+
+The training error estimated from the whole dataset was 21 %. The testing error is roughly 22 %. It means that my model accurately predicted 78 % of the observations in the testing set. The error is a slightly smaller than in the Datacamp exercise (0.26).  
