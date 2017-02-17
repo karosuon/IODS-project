@@ -1,0 +1,275 @@
+---
+title: "chapter4.Rmd"
+author: "Rstudio"
+date: "16 helmikuuta 2017"
+output: html_document
+---
+
+```{r}
+  setwd("Z:/Jatko-opinnot/Tilastotiede 2016/IODS/IODS-project")
+```
+
+#RStudio Exercise 4
+
+This week we use a Boston dataset which describes the Housing Values in Suburbs of Boston. More information about the dataset can be found here: https://stat.ethz.ch/R-manual/R-devel/library/MASS/html/Boston.html
+
+```{r, message=FALSE, warning=FALSE}
+#install and access the package and data 
+install.packages("MASS", repos="http://cran.rstudio.com/")
+library(MASS)
+data("Boston")
+```
+
+Boston dataset has 506 observations and 14 variables. Variables describe, for instance, economic, demographic, and environmental factors of the area. Here are the descriptions of the variables:
+
+crim=per capita crime rate by town
+zn=proportion of residential land zoned for lots over 25,000 sq.ft.
+indus=proportion of non-retail business acres per town
+chas=Charles River dummy variable (= 1 if tract bounds river; 0 otherwise)
+nox=nitrogen oxides concentration (parts per 10 million)
+rm=average number of rooms per dwelling
+age=proportion of owner-occupied units built prior to 1940
+dis=weighted mean of distances to five Boston employment centres
+rad=index of accessibility to radial highways
+tax=full-value property-tax rate per \$10,000
+ptratio=pupil-teacher ratio by town
+black=1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town
+lstat=lower status of the population (percent)
+medv=median value of owner-occupied homes in \$1000s
+
+```{r}
+# explore the dataset
+dim(Boston)
+str(Boston)
+```
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+#install and use the package 
+install.packages("GGally", repos="http://cran.rstudio.com/")
+library(GGally)
+```
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+#install and access the package 
+install.packages("ggplot2", repos="http://cran.rstudio.com/")
+library(ggplot2)
+```
+
+```{r}
+#get a graphical overview of the data
+p <- ggpairs(Boston, mapping = aes(alpha = 0.3), lower = list(combo = wrap("facethist", bins = 20)))
+p
+#summary of the variables
+summary(Boston)
+```
+
+From the picture above we see the distributions and correlations of the variables. Most of the variables are not normally distributed ("rm", the average number of rooms per dwelling seems to be closest to normal distribution). In this exercise, our main interest is the variable "crim" which refers to per capita crime rate by town. It has the strongest association with the index of accessibility to radial highways ("rad") and the full-value property-tax rate per \$10,000 ("tax").The dummy variable describing if the area bounds the river Charles or not is, on the other hand, only very weakly correlated with crime. By examining the summaries of the variables we notice that different variables are measured by very different scales. For later analyses, we must standardize them.
+
+```{r}
+# center and standardize variables
+boston_scaled <- scale(Boston)
+# change the object to data frame
+boston_scaled <- as.data.frame(boston_scaled)
+# summaries of the scaled variables
+summary(boston_scaled)
+```
+
+Now all of the variables have a mean of zero and a standard deviation of one. Let's compare the scaled and non-scaled variables crim (per capita crime rate by town) and dis (weighted mean of distances to five Boston employment centres)
+
+```{r}
+summary(boston_scaled$crim)
+summary(Boston$crim)
+summary(boston_scaled$dis)
+summary(Boston$dis)
+```
+
+Nest I create a categorical variable of the crime rate. I use the quantiles as the break points in the categorical variable.
+
+```{r}
+#save the scaled crim as scaled_crim
+scaled_crim <- boston_scaled$crim
+# create a quantile vector of scaled_crim 
+bins <- quantile(scaled_crim)
+#create a categorical variable 'crime'
+crime <- cut(scaled_crim, breaks = bins, include.lowest = TRUE, labels = c("low", "med_low", "med_high", "high"))
+#see the categorical variable of crime 
+table(crime)
+```
+
+Now I delete the old, numerical variable "crim" from the dataset and save the new one instead. I make sure everything worked OK by checking the names of the dataset.
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+#install and use the package 
+install.packages("dplyr", repos="http://cran.rstudio.com/")
+library(dplyr)
+```
+
+```{r}
+#remove original crim from the dataset
+boston_scaled <- dplyr::select(boston_scaled, -crim)
+#add the new categorical value to scaled data
+boston_scaled <- data.frame(boston_scaled, crime)
+#check that dataset is ok
+names(boston_scaled)
+```
+
+Now I divide my dataset to a training set and a testing set. Splitting the original data to test and train sets allows us to check how well our model works. I'll select randomly 80 % of the rows to my training set. 
+ 
+```{r}
+#number of rows in the Boston dataset 
+n <- nrow(boston_scaled)
+#choose randomly 80% of the rows
+ind <- sample(n,  size = n * 0.8)
+#create train set
+train <- boston_scaled[ind,]
+#create test set 
+test <- boston_scaled[-ind,]
+str(train)
+str(test)
+```
+
+Next I fit the linear discriminant analysis on the training set. Linear discriminant analysis is a classification (and dimension reduction) method. It finds the (linear) combination of the variables that separate the target variable classes. I use the categorical crime rate as the target variable and all the other variables in the dataset as predictor variables.
+
+```{r}
+#linear discriminant analysis
+lda.fit <- lda(crime ~ ., data = train)
+#print the lda.fit object
+lda.fit
+```
+
+In the first row, we see the prior probabilities of groups: they are roughly 25 % for each. Then we have the group means which seem to differ between the groups. Then we have the coefficients of linear discriminants and the proportion of trace which gives the percentage separation achieved by each discriminant function. We see that our first discriminant function explains the between group variance much better than the next two functions.
+
+Next I draw the scatterplot of the LDA results where different colours represent the different classes. The arrows shows the impact of different variables to the target variable, crime rate. LD1 is on the x axel and LD2 on the y axel. As was shown in a table before, index of accessibility to radial highways (rad) has the strongest impact on the LD1 and nitrogen oxides concentration (nox) and the proportion of residential land zoned for lots over 25,000 sq.ft. (zn) have the strongest impact on the LD2.
+
+```{r}
+#the function for lda biplot arrows
+lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+
+# target classes as numeric
+classes <- as.numeric(train$crime)
+
+# plot the lda results
+plot(lda.fit, dimen = 2, col=classes, pch=classes)
+lda.arrows(lda.fit, myscale = 2)
+```
+
+Next I test how well my model predicts the classes for the test set. 
+
+```{r}
+#save the correct classes from test data
+correct_classes <- test$crime
+#remove the crime variable from test data
+test <- dplyr::select(test, -crime)
+# predict classes with test data and save them to the 
+lda.pred <- predict(lda.fit, newdata = test)
+# cross tabulate the results
+table(correct = correct_classes, predicted = lda.pred$class) %>% addmargins()
+```
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+install.packages("gmodels", repos="http://cran.rstudio.com/")
+library(gmodels)
+```
+
+Below we see the correlation of the predicted and correct classes. I think our model did pretty well.
+
+```{r}
+#recode to numeric factors
+correct_classes_num<-as.numeric(correct_classes)
+lda.pred$class_num<-as.numeric(lda.pred$class)
+#see correlation
+cor.test (correct_classes_num, lda.pred$class_num, alternative = c ("two.sided"))
+class(correct_classes)
+```
+
+The last part of the assignment is K-means clustering. K-means is maybe the most used and known clustering method. It is an unsupervised method, that assigns observations to groups or clusters based on similarity of the objects. First I load the data again and scale the whole dataset.
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+#install and access the package and data 
+install.packages("MASS", repos="http://cran.rstudio.com/")
+library(MASS)
+data("Boston")
+```
+ 
+```{r}
+#scale the dataset
+Boston <- scale(Boston)
+Boston <- as.data.frame(Boston)
+summary(Boston)
+```
+
+Next I calculate the Euclidean distance between the observations. 
+
+```{r}
+#Calculate the Euclidean distance between the observations
+dist_eu <- dist(Boston)
+# look at the summary of the distances
+summary(dist_eu)
+```
+
+Next I study how many clusters would be optimal for this dataset. I set the maximum clusters to 10. I look at how the total of within cluster sum of squares (WCSS) behaves when the number of cluster changes. The optimal number of clusters is when the total WCSS drops radically.
+
+```{r}
+set.seed(123)
+# determine the maximum number of clusters
+k_max <- 10
+# calculate the total within sum of squares
+twcss <- sapply(1:k_max, function(k){kmeans(dist_eu, k)$tot.withinss})
+# visualize the results
+plot(1:k_max, twcss, type='b')
+```
+
+From the plot we see, that 2 clusters would be optimal for this data. I run the K-means clustering again, this time for two clusters. K-means might produce different results every time, because it randomly assigns the initial cluster centers. The function set.seed() can be used to deal with that.
+
+```{r}
+#k-means clustering
+set.seed(123)
+km <-kmeans(dist_eu, centers=2)
+pairs(Boston, col = km$cluster)
+```
+
+In the picture below we have the two clusters with different colours for each variable. For our main interest, crime rate, the two cluster structure is easy to see. 
+
+As a bonus I perform k-means on the original Boston data with some reasonable number of clusters (> 2). The data is already standardized. I then perform LDA using the clusters as target classes and visualize the results.
+
+```{r}
+#k-means clustering
+set.seed(123)
+km <-kmeans(dist_eu, centers=5)
+pairs(Boston, col = km$cluster)
+summary(km$cluster)
+```
+
+In the plot below, the arrows represent the relationships of the original variables to the LDA solution. Variables "black", "rad", and "tax" are the most influential linear separators for the clusters. Yet, these clusters are not really reasonable: it is difficult to argument why we would need 5 clusters for this dataset. Also, when we look at the LDA table, we see that the last two discriminant functions (LDA3 and LDA4) explain the between group variance only a really small amount.
+
+```{r}
+#linear discriminant analysis
+lda.fit2 <- lda(km$cluster ~ ., data = Boston)
+
+#print the lda.fit object
+lda.fit2
+
+#the function for lda biplot arrows
+lda.arrows2 <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+
+# target classes as numeric
+classes2 <- as.numeric(km$cluster)
+
+# plot the lda results
+plot(lda.fit2, dimen = 2, col=classes2, pch=classes)
+lda.arrows2(lda.fit2, myscale = 2)
+```
