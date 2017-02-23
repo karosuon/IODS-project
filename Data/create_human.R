@@ -1,4 +1,5 @@
-#RStudio Exercise 4, data wrangling (data: "Human development" and "Gender inequality", 
+#Karoliina Suonp‰‰, 23.2.2017
+#RStudio Exercise 4 and 5, data wrangling (data: "Human development" and "Gender inequality", 
 #more information here: http://hdr.undp.org/en/content/human-development-index-hdi) 
 
 #set workind directory
@@ -83,7 +84,62 @@ dim(human)
 dim(hd)
 dim(gii)
 
-#Everythinig worked OK!
+#Everything worked OK!
+
+#Write CSV in and save to the Data-folder
+write.csv(human, file = "human.csv")
+
+
+#Week 5
+
+#transform the Gross National Income (GNI) variable to numeric
+install.packages("stringr")
+library(stringr)
+
+human$gni_c <- str_replace(human$gni_c, pattern=",", replace ="") %>% as.numeric
+
+
+#Exclude unneeded variables from the dataset   
+#install.packages
+install.packages("dplyr", repos="http://cran.rstudio.com/")
+library(dplyr)
+
+# choose columns to keep
+keep <- c("country", "life_exp", "educ_exp", "gni_c", "mat_mort", "b_rate", "parl", "educ_rat", "labour_rat")
+
+
+# select the 'keep' columns
+human <- select(human, one_of(keep))
+
+#check that dataset is ok
+names(human)
+
+#Remove all rows with missing values.
+# print out a completeness indicator of the 'human' data
+complete.cases(human)
+
+# print out the data along with a completeness indicator as the last column
+data.frame(human[-1], comp = complete.cases(human))
+
+# filter out all rows with NA values
+human <- filter(human, complete.cases(human))
+
+#Remove the observations which relate to regions instead of countries. (1 point)
+tail(human, n=20)
+#The last 7 observations are not countries, I delete them
+# define the last indice we want to keep
+last <- nrow(human) - 7
+# choose everything until the last 7 observations
+human <- human[1:last, ]
+
+
+#Define the row names of the data by the country names and remove the country name column from the data. 
+rownames(human_) <- human_$Country
+human <- dplyr::select(human, -country)
+
+#check the data
+summary(human)
+dim(human)
 
 #Write CSV in and save to the Data-folder
 write.csv(human, file = "human.csv")
