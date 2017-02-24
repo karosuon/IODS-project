@@ -128,7 +128,7 @@ From the biplot we see that, for instance, Iceland has high gender equality, giv
 and woment tend to participate in politics and labour force more than most of the countries. Many African and Asian countries such as Niger and Afgahistan, for instance, are poor countries where people have short life expectancy, women tend to have many chidren and giving birth is dangerous, and women do not participate in politics and labour. Rwanda seems an interesting case since they have women participating in politics and labour force but it is still a poor country relatively high maternal mortality and adolescent birth rate. Qatar, Kuwait and Saudi Arabia are among the wealthiest countries in the world but women do not participate in the labour force or politics. This biplot clearly states that if we want to measure well-being of populations of different countries, many measures are needed. Also, gender inequality
 is not automatically improving when gross national income per capita improves.
 
-#Multiple Correspondence Analysis
+##Multiple Correspondence Analysis
 
 ```{r}
 install.packages("FactoMineR", repos="http://cran.rstudio.com/")
