@@ -1,4 +1,4 @@
-#Karoliina Suonp‰‰, 23.2.2017
+#Karoliina Suonp??, 23.2.2017
 #RStudio Exercise 4 and 5, data wrangling (data: "Human development" and "Gender inequality", 
 #more information here: http://hdr.undp.org/en/content/human-development-index-hdi) 
 
@@ -132,9 +132,8 @@ last <- nrow(human) - 7
 # choose everything until the last 7 observations
 human <- human[1:last, ]
 
-
 #Define the row names of the data by the country names and remove the country name column from the data. 
-rownames(human_) <- human_$Country
+rownames(human) <- human$country
 human <- dplyr::select(human, -country)
 
 #check the data
