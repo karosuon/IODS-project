@@ -1,0 +1,138 @@
+---
+title: "chapter5.Rmd"
+author: "Rstudio"
+date: "24 helmikuuta 2017"
+output: html_document
+---
+
+#RStudio Exercise 5
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+setwd("Z:/Jatko-opinnot/Tilastotiede 2016/IODS/IODS-project/Data")
+human <- read.csv("http://s3.amazonaws.com/assets.datacamp.com/production/course_2218/datasets/human2.txt", sep=",", header=T)
+```
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+#install and use the package 
+install.packages("GGally", repos="http://cran.rstudio.com/")
+library(GGally)
+```
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+#install and access the package 
+install.packages("ggplot2", repos="http://cran.rstudio.com/")
+library(ggplot2)
+```
+
+##Describing the dataset
+
+The 'human' dataset originates from the United Nations Development Programme. More information about the dataset can be found here: http://hdr.undp.org/en/content/human-development-index-hdi. In this assigmet, I use the dataset which has 8 variables and 155 countries. The variables of the dataset describe health, economic and gender equality of each country. Below is the list of the variable names and descriptions. 
+
+> 
+* "GNI" = Gross National Income per capita
+* "Life.Exp" = Life expectancy at birth
+* "Edu.Exp" = Expected years of schooling 
+* "Mat.Mor" = Maternal mortality ratio
+* "Ado.Birth" = Adolescent birth rate
+* "Parli.F" = Percetange of female representatives in parliament
+* "Edu2.FM" = the ratio of Female and Male populations with secondary education in each country
+* "Labo.FM" = the ratio of labour force participation of females and males in each country
+
+Below is the summary of the data. We see that the variables have very different scales. The differences between the scales are important for later analyses.
+
+```{r}
+summary(human)
+```
+
+Just for curiosity, here is how Finland is doing
+
+```{r}
+human[22,]
+```
+
+And some other countries as well. As expected, there are huge differences between countries.
+```{r}
+head(human, n=5)
+tail(human, n=5)
+```
+
+```{r}
+p <- ggpairs(human, mapping = aes(alpha = 0.3), lower = list(combo = wrap("facethist", bins = 20)))
+p
+```
+
+In the picture above we have the graphical overview of the dataset, showing the distributions and correlations of the variables. The variables do not seem to be normally distributed (the variable Edu.Exp, which describes the expected years of schooling is closes to normal distribution). The variables describing health are strongly correlated with each other: for isntance, maternal mortality ratio ("Mat.Mor"), has strong, inverse correlation with life expectancy at birth (r=-0.86) and adolescent birth rate (r:-0.76). Maternal mortality is also associated with the access to education: it has an inverse association with the expected years of schooling (r=-0.74) and  the ratio of female and male populations with secondaryeducation (r=-0.66). Gross National Income per capita, GNI, is positively associated with life expectancy at birth (r=0.63) and expected years of schooling (r=0.62). GNI is also at least moderately associated with the ratio of female and male populations with secondaryeducation (r=0.43), but - interestenly - GNI is not correlated with all of the variables desribing gender equality. GNI is not associated with the ratio of labour force participation of females and males as well as with percetange of female representatives in parliament.
+
+##Principal Component Analysis 
+###Non-standardized data
+Next I perform principal component analysis (PCA) on the not standardized human data. My goal is to find the components that capture the most of the variance. PCA can be performed by two sightly different matrix decomposition methods from linear algebra: the Eigenvalue Decomposition and the Singular Value Decomposition (SVD). In this assingment, I used the SVD method. I use the prcomp() function which decompose a data matrix into a product of smaller matrices, which let's us extract the underlying principal components. This makes it possible to approximate a lower dimensional representation of 
+the data by choosing only a few principal components.
+
+```{r}
+pca_human <- prcomp(human)
+pca_human
+```
+
+In PCA, the data is first transformed to a new space with equal or less number of dimensions. These new features are called the principal components. The 1st principal component (PC1) captures the maximum amount of variance from the features in the original data. The 2nd principal component (PC2) is orthogonal to the first and it captures the maximum amount of variability left. The same is true for each principal component. They are all uncorreleated and each is less important than the previous one, in terms of captured variance. With our data, we found 8 principal components. Lets see the importance of different components.
+
+```{r}
+summary(pca_human)
+```
+
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+# create and print out a summary of pca_human
+s <- summary(pca_human)
+# rounded percetanges of variance captured by each PC
+pca_pr <- round(100*s$importance[2, ], digits = 1)
+# create object pc_lab to be used as axis labels
+pc_lab <- paste0(names(pca_pr), " (", pca_pr, "%)") 
+```
+
+```{r, message=FALSE, warning=FALSE}
+# draw a biplot
+biplot(pca_human, cex = c(0.5, 0.8), xlab = pc_lab[1], ylab = pc_lab[2])
+```
+
+This piblot suggest that almost all of the variance is caused by one GNI, Gross National Income per capita. PCA is sensitive to the relative scaling of the original features and assumes that features with larger variance are more important than features with smaller variance. GNI has the largest scale (min: 581, max: 123,100). Therefore I'll do the analysis again, but with this time by standardized data.
+
+###Standardized data
+
+```{r}
+#scale the dataset
+human_st <- scale(human)
+#Pca on standardized data
+pca_human_st <- prcomp(human_st)
+pca_human_st
+summary(pca_human_st)
+```
+
+The results of the PCA with standardized data are clearly different. Now the first two components explain 53.6% and 16.2% of the variance in our dataset. The variables having strongest loadings on PC1 are maternal mortality ratio and adolescent birth rate. The strongest negative loadings on PC1 are life expectancy, expected years of schooling, the ratio of females to males with secondary education, and gross national income per capita. The variables having strongest
+loadings on PC2 are the ratio of females to males in labour and female parliamentary representation. The first principal component seems to describe health and economic factors of the countries, and the second describes the gender equality in participating in politics and labour. Together these two component explained 70 percentages of the variance between countries.
+
+```{r, message=FALSE, warning=FALSE, results='hide'}
+s_td <- summary(pca_human_st)
+# rounded percetanges of variance captured by each PC
+pca_pr2 <- round(100*s_td$importance[2, ], digits = 1)
+# create object pc_lab to be used as axis labels
+pc_lab2 <- paste0(names(pca_pr2), "(", pca_pr2, "%)")   
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+# draw a biplot
+biplot(pca_human_st, cex = c(0.5, 0.8), col = c("grey40", "red"), xlab = pc_lab2[1], ylab = pc_lab2[2])
+```
+
+From the biplot we see that, for instance, Iceland has high gender equality, giving birth is safe to a woman's health,
+and woment tend to participate in politics and labour force more than most of the countries. Many African and Asian countries such as Niger and Afgahistan, for instance, are poor countries where people have short life expectancy, women tend to have many chidren and giving birth is dangerous, and women do not participate in politics and labour. Rwanda seems an interesting case since they have women participating in politics and labour force but it is still a poor country relatively high maternal mortality and adolescent birth rate. Qatar, Kuwait and Saudi Arabia are among the wealthiest countries in the world but women do not participate in the labour force or politics. This biplot clearly states that if we want to measure well-being of populations of different countries, many measures are needed. Also, gender inequality
+is not automatically improving when gross national income per capita improves.
+
+#Multiple Correspondence Analysis
+
+```{r}
+install.packages("FactoMineR", repos="http://cran.rstudio.com/")
+R.Version()
+```
+
+It seems that I am not able to download Factominer since my version of R is too old (3.2.2). Unfortunately, I am doing all of these assingments by my work laptop which belongs to university, and I am not able to uprage to the latest version of R by myself (I don't have the rights of the system administrator). I've contacted Helpdesk two weeks ago and they've promised to give me a newer version, but I am still waiting... If I manage to do this assignment with another computer, I'll add it here later, otherwise I just have to skip this part.
