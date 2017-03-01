@@ -126,7 +126,7 @@ From the biplot we see that, for instance, Iceland has high gender equality, giv
 
 ##Multiple Correspondence Analysis
 
-```{r, message=FALSE, warning=FALSE, echo=FALSE}
+```{r, message=FALSE, warning=FALSE, results='hide', echo=FALSE}
 install.packages("FactoMineR", repos="http://cran.rstudio.com/")
 library(FactoMineR)
 library(dplyr)
